@@ -15,8 +15,8 @@
             "body": '{"username": "pomelo", "rid": "world"}'
         },
         "Talk": {
-            "route" : 'ServiceGame.Talk',
-            "body": '{"msg": "pomelo"}'
+            "route" : 'chat.chatHandler.send',
+            "body": '{"content": "pomelo"}'
         },
     };
 
@@ -82,6 +82,7 @@
         pomelo.on('disconnect', onConnectionLost);
         pomelo.on('onAdd', showResponse);
         pomelo.on('onLeave', showResponse);
+        pomelo.on('onChat', showResponse);
 
         queryConnector(serverUrl, serverPort, username, function(host, port) {
             pomelo.init({
