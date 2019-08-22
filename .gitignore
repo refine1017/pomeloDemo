@@ -1,0 +1,7 @@
+game-server/node_modules
+game-server/logs/*
+game-server/package-lock.json
+web-server/node_modules
+web-server/logs/*
+web-server/package-lock.json
+.idea
