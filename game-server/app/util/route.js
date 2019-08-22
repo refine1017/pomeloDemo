@@ -12,4 +12,4 @@ exp.chat = function (session, msg, app, cb) {
     let res = dispatcher.dispatch(session.get('rid'), chatServers);
 
     cb(null, res.id)
-}
+};
