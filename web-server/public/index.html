@@ -7,20 +7,16 @@
     let sendMsg = "";
     let msgs = {
         "Hello": {
-            "route" : 'connector.entryHandler.entry',
-            "body": 'hello pomelo'
-        },
-        "Register": {
-            "route" : 'ServiceLogin.Register',
-            "body": '{"username": "nano", "nickname": "nano"}'
+            "route" : 'connector.entryHandler.hello',
+            "body": '{"name": "pomelo"}'
         },
         "Login": {
-            "route" : 'ServiceLogin.Login',
-            "body": '{"username": "nano"}'
+            "route" : 'connector.entryHandler.login',
+            "body": '{"username": "pomelo", "rid": "world"}'
         },
         "Talk": {
             "route" : 'ServiceGame.Talk',
-            "body": '{"msg": "nano"}'
+            "body": '{"msg": "pomelo"}'
         },
     };
 
@@ -40,32 +36,60 @@
             if (new RegExp("(" + k + ")").test(fmt))
                 fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
         return fmt;
+    };
+
+    function queryConnector(host, port, username, callback) {
+        pomelo.init({
+            host: host,
+            port: port,
+            log: true
+        }, function() {
+            pomelo.request('gate.gateHandler.queryEntry', {
+                uid: username,
+            }, function(data) {
+                pomelo.disconnect();
+                if(data.code === 500) {
+                    alert("Login Fail");
+                    return;
+                }
+                callback(data.host, data.port);
+            });
+        });
     }
 
     function connect() {
         let serverUrl = document.getElementById("serverUrl").value;
         let serverPort = document.getElementById("serverPort").value;
+        let username = document.getElementById("username").value;
 
         document.getElementById("connectStatus").innerHTML = "Wait Connect ... ";
         document.getElementById("connectStatus").style.color = "orange";
+
+        let onConnectionLost = function (reason) {
+            document.getElementById("connectStatus").style.color = "red";
+            document.getElementById("connectStatus").innerHTML = "Fail:" + reason;
+
+            connectStatus = false;
+        };
 
         let onSuccess = function () {
             document.getElementById("connectStatus").style.color = "green";
             document.getElementById("connectStatus").innerHTML = "Success";
 
             connectStatus = true;
-
-            starx.on("ServiceLogin.Register", showResponse);
-            starx.on("ServiceLogin.Login", showResponse);
-            starx.on("ServiceGame.TalkNotify", showResponse);
         };
 
+        pomelo.on('disconnect', onConnectionLost);
+        pomelo.on('onAdd', showResponse);
+        pomelo.on('onLeave', showResponse);
 
-        pomelo.init({
-            host: serverUrl,
-            port: serverPort,
-            log: true
-        }, onSuccess);
+        queryConnector(serverUrl, serverPort, username, function(host, port) {
+            pomelo.init({
+                host: host,
+                port: port,
+                log: true
+            }, onSuccess());
+        });
     }
 
     function setMsg(msg) {
@@ -78,7 +102,7 @@
     }
 
     function showResponse(data) {
-        var res = data.msg;
+        var res = JSON.stringify(data);
 
         document.getElementById('responseTxt').innerHTML = new Date().Format("yyyy-MM-dd hh:mm:ss") + " -- " + res + "<br/>" + document.getElementById('responseTxt').innerHTML;
     }
@@ -97,7 +121,7 @@
         let route = msgs[sendMsg].route;
         let body = document.getElementById('requestTxt').value;
 
-        pomelo.request(route, body, showResponse);
+        pomelo.request(route, JSON.parse(body), showResponse);
     }
 
 </script>
@@ -112,7 +136,8 @@
 <hr>
 ServerUrl:
 <input type="text" id="serverUrl" value="127.0.0.1"/>
-<input type="text" id="serverPort" value="3010"/>
+<input type="text" id="serverPort" value="3014"/>
+<input type="text" id="username" value="pomelo" />
 <input type="button" name="Send" onclick="connect()" value="Connect"/>
 <span id="connectStatus" style="color: orange">Wait Connect ... </span>
 <hr>
@@ -130,7 +155,6 @@ ServerUrl:
 <div style="clear: both; margin-top: 20px">
     <h2>Protocol:</h2>
     <input type="button" onclick="setMsg('Hello')" value="Hello"/>
-    <input type="button" onclick="setMsg('Register')" value="Register"/>
     <input type="button" onclick="setMsg('Login')" value="Login"/>
     <input type="button" onclick="setMsg('Talk')" value="Talk"/>
 </div>
